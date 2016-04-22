@@ -18,13 +18,13 @@ var echoWs = websocket.Handler(func(ws *websocket.Conn) {
 	os.Stdout.Write([]byte("Start ECHO"))
 	defer os.Stdout.Write([]byte("End ECHO"))
 
-	ibuf := make([]byte, 1024)
-	obuf := make([]byte, 2*1024)
+	ibuf := make([]byte, 2*1024)
+	obuf := make([]byte, 1024)
 	var n int
 	var ierr, oerr error
 	for ierr == nil && oerr == nil {
 		n, ierr = ws.Read(ibuf)
-		n = hex.Encode(obuf, ibuf[:n])
+		n, ierr = hex.Decode(obuf, ibuf[:n])
 		_, oerr = ws.Write(obuf[:n])
 	}
 })
