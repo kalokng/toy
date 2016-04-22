@@ -17,8 +17,16 @@ import (
 var echoWs = websocket.Handler(func(ws *websocket.Conn) {
 	os.Stdout.Write([]byte("Start ECHO"))
 	defer os.Stdout.Write([]byte("End ECHO"))
-	r := io.TeeReader(ws, os.Stdout)
-	io.Copy(ws, r)
+
+	ibuf := make([]byte, 1024)
+	obuf := make([]byte, 2*1024)
+	var n int
+	var ierr, oerr error
+	for ierr == nil && oerr == nil {
+		n, ierr = ws.Read(ibuf)
+		n = hex.Encode(obuf, ibuf[:n])
+		_, oerr = ws.Write(obuf[:n])
+	}
 })
 
 func EchoServer(w http.ResponseWriter, r *http.Request) {
