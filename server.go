@@ -10,6 +10,8 @@ import (
 	"os"
 
 	"golang.org/x/net/websocket"
+
+	_ "net/http/pprof"
 )
 
 var echoWs = websocket.Handler(func(ws *websocket.Conn) {
@@ -59,12 +61,13 @@ func EchoServer3(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func WebServer(ws *websocket.Conn) {
-	os.Stdout.Write([]byte("Start WEB"))
-	defer os.Stdout.Write([]byte("End WEB"))
-	w := io.MultiWriter(ws, os.Stdout)
-
-	resp, err := http.Get("http://httpbin.org/ip")
+func WebServer(w http.ResponseWriter, r *http.Request) {
+	val := r.URL.Query()
+	q := val.Get("q")
+	if q == "" {
+		q = "http://httpbin.org/ip"
+	}
+	resp, err := http.Get(q)
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -157,6 +160,7 @@ func main() {
 	http.HandleFunc("/echo", EchoServer)
 	http.HandleFunc("/echo2", EchoServer2)
 	http.HandleFunc("/echo3", EchoServer3)
+	http.HandleFunc("/web", WebServer)
 	http.HandleFunc("/proxy2", handleProxy)
 	http.Handle("/proxy", wsProxy)
 	//proxy := NewProxyListener(nil)
