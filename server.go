@@ -140,37 +140,12 @@ var wsProxy = websocket.Handler(func(ws *websocket.Conn) {
 	//return
 })
 
-func handleProxy(w http.ResponseWriter, r *http.Request) {
-	c, rw, err := w.(http.Hijacker).Hijack()
-	if err != nil {
-		panic("cannot hijack http")
-	}
-	defer c.Close()
-
-	req, err := http.ReadRequest(rw.Reader)
-	if err != nil {
-		io.WriteString(c, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request")
-		return
-	}
-	//b, _ := httputil.DumpRequestOut(req, true)
-	//os.Stdout.Write(b)
-
-	fmt.Println("req.Method", req.Method)
-	switch req.Method {
-	case "CONNECT":
-		serveCONNECT(c, req)
-	default:
-		serveGET(c, req)
-	}
-}
-
 func main() {
 	http.HandleFunc("/echo", EchoServer)
 	http.HandleFunc("/echo2", EchoServer2)
 	http.HandleFunc("/echo3", EchoServer3)
 	http.HandleFunc("/web", WebServer)
-	http.HandleFunc("/proxy2", handleProxy)
-	http.Handle("/proxy", wsProxy)
+	http.Handle("/p", wsProxy)
 	//proxy := NewProxyListener(nil)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Hello world")
