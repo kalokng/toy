@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/kalokng/fetch"
+
 	"golang.org/x/net/websocket"
 
 	_ "net/http/pprof"
@@ -18,15 +20,7 @@ var echoWs = websocket.Handler(func(ws *websocket.Conn) {
 	os.Stdout.Write([]byte("Start ECHO"))
 	defer os.Stdout.Write([]byte("End ECHO"))
 
-	ibuf := make([]byte, 2*1024)
-	obuf := make([]byte, 1024)
-	var n int
-	var ierr, oerr error
-	for ierr == nil && oerr == nil {
-		n, ierr = ws.Read(ibuf)
-		n, ierr = hex.Decode(obuf, ibuf[:n])
-		_, oerr = ws.Write(obuf[:n])
-	}
+	io.Copy(ws, ws)
 })
 
 func EchoServer(w http.ResponseWriter, r *http.Request) {
@@ -121,9 +115,12 @@ func serveCONNECT(ws net.Conn, req *http.Request) {
 }
 
 var wsProxy = websocket.Handler(func(ws *websocket.Conn) {
-	req, err := http.ReadRequest(bufio.NewReader(ws))
+	fmt.Println("Reached")
+	conn := fetch.NewUtf8Conn(ws)
+	req, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
-		io.WriteString(ws, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request")
+		fmt.Println(err)
+		io.WriteString(conn, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request")
 		return
 	}
 	//b, _ := httputil.DumpRequestOut(req, true)
@@ -132,12 +129,10 @@ var wsProxy = websocket.Handler(func(ws *websocket.Conn) {
 	fmt.Println("req.Method", req.Method)
 	switch req.Method {
 	case "CONNECT":
-		serveCONNECT(ws, req)
+		serveCONNECT(conn, req)
 	default:
-		serveGET(ws, req)
+		serveGET(conn, req)
 	}
-	//io.WriteString(ws, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request")
-	//return
 })
 
 func main() {
