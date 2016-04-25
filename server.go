@@ -115,11 +115,9 @@ func serveCONNECT(ws net.Conn, req *http.Request) {
 }
 
 var wsProxy = websocket.Handler(func(ws *websocket.Conn) {
-	fmt.Println("Reached")
 	conn := fetch.NewUtf8Conn(ws)
 	req, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
-		fmt.Println(err)
 		io.WriteString(conn, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request")
 		return
 	}
