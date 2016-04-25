@@ -86,7 +86,7 @@ func serveGET(ws net.Conn, req *http.Request) {
 	req.URL.Host = req.Host
 	fmt.Println("URL", req.URL.RequestURI())
 
-	resp, err := http.DefaultTransport.(*http.Transport).RoundTrip(req)
+	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
 		fmt.Println(err)
 		io.WriteString(ws, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request: "+err.Error())
@@ -104,7 +104,7 @@ func serveCONNECT(ws net.Conn, req *http.Request) {
 		io.WriteString(ws, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n500 Internal Server Error: "+err.Error())
 		return
 	}
-	c.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+	ws.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
 	fmt.Println("start tunnel...")
 	go func() {
 		io.Copy(ws, c)
