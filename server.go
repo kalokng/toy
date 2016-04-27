@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kalokng/fetch"
-
 	"golang.org/x/net/websocket"
 
 	_ "net/http/pprof"
@@ -115,7 +113,8 @@ func serveCONNECT(ws net.Conn, req *http.Request) {
 }
 
 var wsProxy = websocket.Handler(func(ws *websocket.Conn) {
-	conn := fetch.NewUtf8Conn(ws)
+	ws.PayloadType = websocket.BinaryFrame
+	conn := ws
 	req, err := http.ReadRequest(bufio.NewReader(conn))
 	if err != nil {
 		io.WriteString(conn, "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n400 Bad Request")
