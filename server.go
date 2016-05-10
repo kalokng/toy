@@ -77,6 +77,20 @@ func WebServer(w http.ResponseWriter, r *http.Request) {
 	resp.Write(w)
 }
 
+func WebServer2(w http.ResponseWriter, r *http.Request) {
+	val := r.URL.Query()
+	q := val.Get("q")
+	if q == "" {
+		q = "http://httpbin.org/ip"
+	}
+	resp, err := http.Get(q)
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	pushResponse(w, resp)
+}
+
 func serveGET(ws net.Conn, req *http.Request) {
 	fmt.Println("req.RequestURI", req.RequestURI)
 	req.RequestURI = ""
@@ -139,6 +153,7 @@ func main() {
 	http.HandleFunc("/echo2", EchoServer2)
 	http.HandleFunc("/echo3", EchoServer3)
 	http.HandleFunc("/web", WebServer)
+	http.HandleFunc("/web2", WebServer2)
 	http.Handle("/p", wsProxy)
 	//proxy := NewProxyListener(nil)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -153,4 +168,19 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func pushResponse(w http.ResponseWriter, resp *http.Response) {
+	hj, ok := w.(http.Hijacker)
+	if !ok {
+		http.Error(w, "webserver doesn't support hijacking", http.StatusInternalServerError)
+		return
+	}
+	conn, _, err := hj.Hijack()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer conn.Close()
+	resp.Write(conn)
 }
